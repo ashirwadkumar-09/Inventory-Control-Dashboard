@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dynamic Inventory Control Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f5f7f6;--card:#fff;--ink:#17211b;--muted:#6c786f;--line:#dfe5e1;--accent:#147d58;--accent2:#e4f3ed;--danger:#c53b3b;--warn:#c78b16;--good:#23845d;--shadow:0 8px 28px rgba(22,42,31,.07)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif}.wrap{max-width:1500px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}.title h1{margin:0;font-size:28px}.title p{margin:7px 0 0;color:var(--muted)}.badge{background:var(--accent2);color:var(--accent);padding:8px 12px;border-radius:20px;font-weight:700;font-size:13px}.layout{display:grid;grid-template-columns:310px 1fr;gap:20px}.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.panel{padding:18px;position:sticky;top:16px;height:max-content}.panel h2,.section h2{font-size:16px;margin:0 0 14px}.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}.field input,.field select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fbfcfb;color:var(--ink);font-size:14px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.help{font-size:11px;color:var(--muted);line-height:1.45}.buttons{display:flex;gap:8px;margin-top:10px}.btn{border:0;border-radius:9px;padding:9px 12px;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:white}.secondary{background:#eef2ef;color:var(--ink)}.main{min-width:0}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}.kpi{padding:16px}.kpi .label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase}.kpi .value{font-size:25px;font-weight:800;margin-top:8px}.kpi .sub{font-size:11px;color:var(--muted);margin-top:5px}.grid{display:grid;grid-template-columns:1.35fr .85fr;gap:16px}.card{padding:18px}.chartbox{height:350px}.filters{display:flex;gap:10px;align-items:center;margin-bottom:12px}.filters input,.filters select{padding:9px;border:1px solid var(--line);border-radius:9px}.alerts{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto}.alert{padding:10px 12px;border-radius:10px;background:#fff3f3;border-left:4px solid var(--danger);font-size:13px}.alert.ok{background:#eef8f3;border-left-color:var(--good)}.tablewrap{overflow:auto;margin-top:12px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th{background:#f2f5f3;color:var(--muted);text-align:left;padding:10px;white-space:nowrap}.table td{padding:10px;border-bottom:1px solid #edf0ee;white-space:nowrap}.stock{font-weight:800}.red{color:var(--danger)}.yellow{color:var(--warn)}.green{color:var(--good)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}.dot.red{background:var(--danger)}.dot.yellow{background:var(--warn)}.dot.green{background:var(--good)}.abc{font-weight:800}.foot{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.5}.section{margin-top:16px}.mini{font-size:12px;color:var(--muted)}@media(max-width:1100px){.layout{grid-template-columns:1fr}.panel{position:relative;top:0}.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}@media(max-width:600px){.wrap{padding:12px}.kpis{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.top{display:block}.badge{display:inline-block;margin-top:10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="title"><h1 id="dashTitle">Inventory Control Dashboard</h1><p>EOQ • Reorder Point • Safety Stock • ABC Analysis • Inventory Cost Optimization</p></div><div class="badge">Interactive Model</div></div>
+  <div class="layout">
+    <aside class="panel">
+      <h2>Model Controls</h2>
+      <div class="field"><label>Company / Product Line</label><input id="company" value="Apex Consumer Products"></div>
+      <div class="field"><label>Reorder Policy</label><select id="policy"><option>Continuous Review</option><option>Periodic Review</option></select></div>
+      <div class="row2"><div class="field"><label>Service Level %</label><input id="service" type="number" value="95" min="80" max="99.9" step="0.1"></div><div class="field"><label>Review Period (days)</label><input id="review" type="number" value="7" min="1"></div></div>
+      <div class="field"><label>ABC A cutoff % cumulative</label><input id="acut" type="number" value="80" min="50" max="95"></div>
+      <div class="field"><label>ABC B cutoff % cumulative</label><input id="bcut" type="number" value="95" min="80" max="99"></div>
+      <div class="help">Safety stock uses a normal-demand approximation and an editable service level. For each item, enter daily demand variability (standard deviation) so safety stock can be calculated.</div>
+      <div class="buttons"><button class="btn primary" id="loadDemo">Load Demo</button><button class="btn secondary" id="reset">Reset</button></div>
+    </aside>
+    <main class="main">
+      <div class="kpis">
+        <div class="card kpi"><div class="label">Items</div><div class="value" id="kItems">0</div><div class="sub">visible after filters</div></div>
+        <div class="card kpi"><div class="label">Reorder Alerts</div><div class="value red" id="kAlerts">0</div><div class="sub">stock at/below reorder point</div></div>
+        <div class="card kpi"><div class="label">Inventory Value</div><div class="value" id="kValue">₹0</div><div class="sub">current stock × unit cost</div></div>
+        <div class="card kpi"><div class="label">Annual Consumption</div><div class="value" id="kConsumption">₹0</div><div class="sub">demand × unit cost</div></div>
+        <div class="card kpi"><div class="label">Potential Cost Saving</div><div class="value" id="kSaving">₹0</div><div class="sub">EOQ vs current-order cost</div></div>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="section"><h2>Inventory Cost vs Order Quantity</h2><div class="mini" id="chartSubtitle">Select an item below to see its EOQ as the minimum cost point.</div></div><div class="chartbox"><canvas id="costChart"></canvas></div></div>
+        <div class="card"><h2>Reorder Alerts</h2><div id="alerts" class="alerts"></div></div>
+      </div>
+      <div class="card section"><h2>Inventory Items</h2>
+        <div class="filters"><input id="search" placeholder="Search item/category…"><select id="abcFilter"><option value="ALL">All ABC</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select><select id="statusFilter"><option value="ALL">All Status</option><option value="RED">Reorder</option><option value="YELLOW">Watch</option><option value="GREEN">Healthy</option></select><select id="itemSelect"></select></div>
+        <div class="tablewrap"><table class="table"><thead><tr><th>Item</th><th>ABC</th><th>Annual Demand</th><th>EOQ</th><th>Reorder Point</th><th>Safety Stock</th><th>Current Stock</th><th>Lead Time</th><th>Current OQ</th><th>Cost @ EOQ</th><th>Cost @ Current OQ</th><th>Status</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      </div>
+      <div class="card section"><h2>ABC Analysis</h2><div class="tablewrap"><table class="table"><thead><tr><th>Class</th><th>Items</th><th>Annual Consumption Value</th><th>% of Total</th><th>Cumulative %</th></tr></thead><tbody id="abcBody"></tbody></table></div></div>
+      <div class="foot"><b>Model logic:</b> EOQ = √(2DS/H), where D = annual demand, S = ordering cost/order, H = carrying cost/unit/year. Continuous-review reorder point = average daily demand × lead time + safety stock. Periodic-review reorder point = average demand × (lead time + review period) + safety stock. Safety stock uses z × daily demand standard deviation × √lead time. Total annual inventory cost = (D/Q)S + (Q/2)H. ABC classification ranks items by annual consumption value (D × unit cost) and applies the editable cumulative cutoffs above. This is a planning model; actual policy may also account for MOQ, supplier constraints, seasonality and review-specific demand variability.</div>
+    </main>
+  </div>
+</div>
+<script>
+const demo=[
+ {item:'A-100 Premium Filter',cat:'Filters',D:24000,S:420,H:18,c:85,stock:1100,lead:6,oq:1200,sd:38},
+ {item:'B-210 Standard Motor',cat:'Motors',D:9000,S:650,H:42,c:240,stock:520,lead:12,oq:650,sd:16},
+ {item:'C-315 Control Board',cat:'Electronics',D:15000,S:300,H:24,c:140,stock:1800,lead:8,oq:1000,sd:30},
+ {item:'D-410 Housing',cat:'Components',D:36000,S:180,H:9,c:55,stock:2500,lead:5,oq:3000,sd:52},
+ {item:'E-520 Sensor',cat:'Electronics',D:6000,S:520,H:30,c:190,stock:250,lead:15,oq:450,sd:13},
+ {item:'F-610 Seal Kit',cat:'Components',D:42000,S:95,H:4.5,c:18,stock:4200,lead:4,oq:5000,sd:70},
+ {item:'G-715 Display',cat:'Electronics',D:3500,S:800,H:55,c:320,stock:100,lead:18,oq:300,sd:9},
+ {item:'H-820 Cable Set',cat:'Components',D:18000,S:140,H:7,c:32,stock:1600,lead:7,oq:2200,sd:28}
+];
+let data=JSON.parse(JSON.stringify(demo)), chart=null;
+const $=id=>document.getElementById(id); const num=id=>Number($(id).value)||0;
+function zFor(service){const p=service/100; const z={80:.842,85:1.036,90:1.282,95:1.645,97.5:1.96,98:2.054,99:2.326}; if(z[p])return z[p]; let best=1.645,d=1e9; for(const k in z){const dd=Math.abs(Number(k)-service);if(dd<d){d=dd;best=z[k]}} return best;}
+function calc(x){const D=x.D,S=x.S,H=x.H, c=x.c, z=zFor(num('service')); const eoq=Math.sqrt((2*D*S)/H); const ss=z*x.sd*Math.sqrt(x.lead); const avg=D/365; const rp=avg*( $('policy').value==='Periodic Review' ? x.lead+num('review') : x.lead)+ss; const oq=x.oq>0?x.oq:eoq; const costE=(D/eoq)*S+(eoq/2)*H; const costQ=(D/oq)*S+(oq/2)*H; const status=x.stock<=rp?'RED':x.stock<=rp*1.25?'YELLOW':'GREEN'; return {...x,eoq,ss,rp,costE,costQ,status,annualValue:D*c};}
+function abcClass(rows){rows.sort((a,b)=>b.annualValue-a.annualValue);const total=rows.reduce((s,x)=>s+x.annualValue,0);let cum=0;const A=num('acut'),B=num('bcut');rows.forEach(x=>{x.share=total?x.annualValue/total*100:0;cum+=x.share;x.cum=cum;x.abc=cum<=A?'A':cum<=B?'B':'C';});return rows;}
+function getRows(){let rows=abcClass(data.map(calc)); const q=$('search').value.toLowerCase(); const af=$('abcFilter').value,sf=$('statusFilter').value; return rows.filter(x=>(!q||(x.item+' '+x.cat).toLowerCase().includes(q))&&(af==='ALL'||x.abc===af)&&(sf==='ALL'||x.status===sf));}
+function money(v){return '₹'+Math.round(v).toLocaleString('en-IN');} function units(v){return Math.round(v).toLocaleString('en-IN');}
+function render(){const all=abcClass(data.map(calc)); const rows=getRows(); $('dashTitle').textContent=( $('company').value||'Inventory Control')+' — Inventory Control Dashboard'; $('kItems').textContent=rows.length; $('kAlerts').textContent=rows.filter(x=>x.status==='RED').length; $('kValue').textContent=money(rows.reduce((s,x)=>s+x.stock*x.c,0)); $('kConsumption').textContent=money(rows.reduce((s,x)=>s+x.annualValue,0)); $('kSaving').textContent=money(rows.reduce((s,x)=>s+Math.max(0,x.costQ-x.costE),0));
+ $('tbody').innerHTML=rows.map(x=>`<tr><td><b>${x.item}</b><br><span class="mini">${x.cat}</span></td><td class="abc ${x.abc==='A'?'red':x.abc==='B'?'yellow':'green'}">${x.abc}</td><td>${units(x.D)}</td><td>${units(x.eoq)}</td><td>${units(x.rp)}</td><td>${units(x.ss)}</td><td class="stock ${x.status.toLowerCase()}">${units(x.stock)}</td><td>${x.lead} d</td><td>${units(x.oq)}</td><td>${money(x.costE)}</td><td>${money(x.costQ)}</td><td><span class="dot ${x.status.toLowerCase()}"></span>${x.status==='RED'?'REORDER':x.status==='YELLOW'?'WATCH':'HEALTHY'}</td></tr>`).join('')||'<tr><td colspan="12">No items match the filters.</td></tr>';
+ const alerts=all.filter(x=>x.status==='RED'); $('alerts').innerHTML=alerts.length?alerts.map(x=>`<div class="alert"><b>${x.item}</b> — stock ${units(x.stock)} is below reorder point ${units(x.rp)}. Suggested EOQ: ${units(x.eoq)} units.</div>`).join(''):'<div class="alert ok">No items are currently below their reorder point.</div>';
+ $('abcBody').innerHTML=['A','B','C'].map(k=>{const rr=all.filter(x=>x.abc===k);const val=rr.reduce((s,x)=>s+x.annualValue,0);const pct=all.reduce((s,x)=>s+x.annualValue,0);const last=rr.length?Math.max(...rr.map(x=>x.cum)):0;return `<tr><td class="abc">${k}</td><td>${rr.length}</td><td>${money(val)}</td><td>${pct?((val/pct)*100).toFixed(1):'0.0'}%</td><td>${last.toFixed(1)}%</td></tr>`}).join('');
+ const current=$('itemSelect').value; const selected=all.find(x=>x.item===current)||all[0]; $('itemSelect').innerHTML=all.map(x=>`<option>${x.item}</option>`).join(''); if(selected){$('itemSelect').value=selected.item; drawChart(selected)} }
+function drawChart(x){const max=Math.max(x.eoq*3,x.oq*2,100);const pts=[];for(let i=0;i<=30;i++){const Q=max*i/30||1;pts.push({x:Math.round(Q),y:(x.D/Q)*x.S+(Q/2)*x.H});} if(chart)chart.destroy(); chart=new Chart($('costChart'),{type:'line',data:{datasets:[{label:'Total annual inventory cost',data:pts,borderWidth:2,pointRadius:0,tension:.25},{label:'EOQ minimum',data:[{x:x.eoq,y:x.costE}],showLine:false,pointRadius:7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{type:'linear',title:{display:true,text:'Order Quantity (units)'}},y:{title:{display:true,text:'Annual Inventory Cost (₹)'}}}}}); $('chartSubtitle').textContent=`${x.item}: EOQ ≈ ${units(x.eoq)} units; minimum modeled annual ordering + carrying cost ≈ ${money(x.costE)}.`;}
+function loadDemo(){data=JSON.parse(JSON.stringify(demo));render()} function reset(){data=JSON.parse(JSON.stringify(demo));$('company').value='Apex Consumer Products';$('policy').value='Continuous Review';$('service').value=95;$('review').value=7;$('acut').value=80;$('bcut').value=95;$('search').value='';$('abcFilter').value='ALL';$('statusFilter').value='ALL';render()}
+['company','policy','service','review','acut','bcut','search','abcFilter','statusFilter'].forEach(id=>$(id).addEventListener('input',render)); $('itemSelect').addEventListener('change',()=>{const rows=abcClass(data.map(calc));const x=rows.find(r=>r.item===$('itemSelect').value);if(x)drawChart(x)}); $('loadDemo').onclick=loadDemo;$('reset').onclick=reset;render();
+</script></body></html>
